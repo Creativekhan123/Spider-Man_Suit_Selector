@@ -295,8 +295,34 @@ html, body {
   border-bottom: 1px solid rgba(0, 240, 255, 0.15);
 }
 
-.rec-dot {
+.cam-switch-btn {
   margin-left: auto;
+  margin-right: 8px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  border-radius: 4px;
+  color: var(--neon-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cam-switch-btn:hover {
+  background: rgba(0, 240, 255, 0.28);
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.rec-dot {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--neon-red);

@@ -50,14 +50,18 @@ class HolographicApp {
     const statusLabel = document.getElementById('gesture-label');
     const camBanner = document.getElementById('cam-permission-banner');
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialCamIdx = parseInt(urlParams.get('cam') || urlParams.get('camera') || '0', 10);
+
     const activateCamera = async () => {
       try {
         if (statusLabel) statusLabel.textContent = 'NEURAL TRACKING: INITIALIZING...';
-        const cameraOk = await this.handTracker.start();
+        const cameraOk = await this.handTracker.start(initialCamIdx);
         if (cameraOk) {
           if (statusLabel) statusLabel.textContent = 'NEURAL TRACKING: ACTIVE';
           if (camBanner) camBanner.classList.add('hidden');
           soundFX.playBoot();
+          this._updateCameraUI();
           return true;
         } else {
           if (statusLabel) statusLabel.textContent = 'CLICK BANNER TO ALLOW CAMERA';
@@ -145,6 +149,15 @@ class HolographicApp {
       });
     }
 
+    const btnSwitchCam = document.getElementById('btn-switch-cam');
+    if (btnSwitchCam) {
+      btnSwitchCam.addEventListener('click', async () => {
+        soundFX.playClick();
+        const res = await this.handTracker.cycleCamera();
+        this._updateCameraUI(res);
+      });
+    }
+
     const btnFullscreen = document.getElementById('btn-fullscreen');
     if (btnFullscreen) {
       btnFullscreen.addEventListener('click', () => {
@@ -168,6 +181,31 @@ class HolographicApp {
     const closeModal = () => modalHelp && modalHelp.classList.remove('open');
     if (btnModalClose) btnModalClose.addEventListener('click', closeModal);
     if (btnModalOk) btnModalOk.addEventListener('click', closeModal);
+  }
+
+  _updateCameraUI(res) {
+    const btn = document.getElementById('btn-switch-cam');
+    if (!btn) return;
+    const activeIdx = this.handTracker.activeCameraIndex;
+    const total = Math.max(1, this.handTracker.videoDevices.length);
+    btn.textContent = `📷 CAM [${activeIdx + 1}/${total}]`;
+    if (res && res.label) {
+      btn.title = `Current Camera: ${res.label} (Click to switch)`;
+      const statusLabel = document.getElementById('gesture-label');
+      if (statusLabel) {
+        statusLabel.textContent = `CAM: ${res.label.substring(0, 24).toUpperCase()}`;
+      }
+    }
+  }
+
+  async switchCamera(index) {
+    const res = await this.handTracker.switchCamera(index);
+    this._updateCameraUI(res);
+    return res;
+  }
+
+  async listCameras() {
+    return await this.handTracker.getAvailableCameras();
   }
 
   _initSuitsRack() {

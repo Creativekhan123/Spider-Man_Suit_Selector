@@ -5,12 +5,12 @@ export class HandTracker {
     this.videoElement = options.videoElement;
     this.bgCanvas = options.bgCanvas;
     this.pipCanvas = options.pipCanvas;
-    this.onGestureUpdate = options.onGestureUpdate || (() => {});
-    this.onDragStart = options.onDragStart || (() => {});
-    this.onDragMove = options.onDragMove || (() => {});
-    this.onDragEnd = options.onDragEnd || (() => {});
-    this.onCenterRotate = options.onCenterRotate || (() => {});
-    this.onCenterZoom = options.onCenterZoom || (() => {});
+    this.onGestureUpdate = options.onGestureUpdate || (() => { });
+    this.onDragStart = options.onDragStart || (() => { });
+    this.onDragMove = options.onDragMove || (() => { });
+    this.onDragEnd = options.onDragEnd || (() => { });
+    this.onCenterRotate = options.onCenterRotate || (() => { });
+    this.onCenterZoom = options.onCenterZoom || (() => { });
 
     this.bgCtx = this.bgCanvas ? this.bgCanvas.getContext('2d') : null;
     this.pipCtx = this.pipCanvas ? this.pipCanvas.getContext('2d') : null;
@@ -24,12 +24,27 @@ export class HandTracker {
 
     this.hands = null;
     this.camera = null;
+    this.currentStream = null;
+    this.videoDevices = [];
+    this.activeCameraIndex = 0;
 
     this.arPassthroughEnabled = true;
     this.trackedHandsData = [];
   }
 
-  async start() {
+  async getAvailableCameras() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      this.videoDevices = devices.filter(d => d.kind === 'videoinput');
+      return this.videoDevices;
+    } catch (e) {
+      console.warn('[HandTracker] Failed to enumerate devices:', e);
+      return [];
+    }
+  }
+
+  async start(preferredIndex = 0) {
     try {
       // 1. Initialize MediaPipe Hands
       const HandsClass = window.Hands || (await import('@mediapipe/hands')).Hands;
@@ -46,35 +61,110 @@ export class HandTracker {
 
       this.hands.onResults((results) => this._onResults(results));
 
-      // 2. Start Webcam Stream
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user'
-        },
-        audio: false
-      });
+      // 2. Discover available cameras
+      await this.getAvailableCameras();
 
-      this.videoElement.srcObject = stream;
-      await this.videoElement.play();
-
-      // 3. Initialize Camera utility loop
-      const CameraClass = window.Camera || (await import('@mediapipe/camera_utils')).Camera;
-      this.camera = new CameraClass(this.videoElement, {
-        onFrame: async () => {
-          await this.hands.send({ image: this.videoElement });
-        },
-        width: 1280,
-        height: 720
-      });
-      await this.camera.start();
+      // 3. Start Stream
+      await this.switchCamera(preferredIndex);
 
       return true;
     } catch (err) {
       console.error('[HandTracker] Failed to start camera / MediaPipe:', err);
       return false;
     }
+  }
+
+  async switchCamera(indexOrDeviceId) {
+    try {
+      await this.getAvailableCameras();
+      const count = this.videoDevices.length;
+
+      let targetDevice = null;
+      let targetIndex = 0;
+
+      if (count > 0) {
+        if (typeof indexOrDeviceId === 'number') {
+          targetIndex = ((indexOrDeviceId % count) + count) % count;
+          targetDevice = this.videoDevices[targetIndex];
+        } else if (typeof indexOrDeviceId === 'string') {
+          const foundIdx = this.videoDevices.findIndex(d => d.deviceId === indexOrDeviceId);
+          if (foundIdx !== -1) {
+            targetIndex = foundIdx;
+            targetDevice = this.videoDevices[foundIdx];
+          } else {
+            targetIndex = 0;
+            targetDevice = this.videoDevices[0];
+          }
+        }
+      }
+
+      this.activeCameraIndex = targetIndex;
+      const deviceId = targetDevice ? targetDevice.deviceId : null;
+
+      // Stop existing tracks cleanly
+      if (this.currentStream) {
+        this.currentStream.getTracks().forEach(t => t.stop());
+        this.currentStream = null;
+      }
+      if (this.camera && this.camera.stop) {
+        try { await this.camera.stop(); } catch (e) { }
+      }
+
+      const videoConstraints = {
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      };
+      if (deviceId) {
+        videoConstraints.deviceId = { exact: deviceId };
+      } else {
+        videoConstraints.facingMode = 'user';
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: false
+      });
+
+      this.currentStream = stream;
+      this.videoElement.srcObject = stream;
+      await this.videoElement.play();
+
+      // Refresh camera devices list after permission granted (gives real device labels)
+      await this.getAvailableCameras();
+
+      // Start/Restart MediaPipe Camera utility loop
+      const CameraClass = window.Camera || (await import('@mediapipe/camera_utils')).Camera;
+      this.camera = new CameraClass(this.videoElement, {
+        onFrame: async () => {
+          if (this.hands) {
+            await this.hands.send({ image: this.videoElement });
+          }
+        },
+        width: 1280,
+        height: 720
+      });
+      await this.camera.start();
+
+      const label = (this.videoDevices[targetIndex] && this.videoDevices[targetIndex].label) || `Camera ${targetIndex + 1}`;
+      console.log(`[HandTracker] Active Camera Index: ${targetIndex} (${label})`);
+
+      return {
+        index: targetIndex,
+        total: Math.max(1, this.videoDevices.length),
+        label: label,
+        deviceId: deviceId
+      };
+    } catch (err) {
+      console.error('[HandTracker] Failed to switch camera stream:', err);
+      return null;
+    }
+  }
+
+  async cycleCamera() {
+    await this.getAvailableCameras();
+    const count = Math.max(1, this.videoDevices.length);
+    const nextIdx = (this.activeCameraIndex + 1) % count;
+    return await this.switchCamera(nextIdx);
   }
 
   _onResults(results) {

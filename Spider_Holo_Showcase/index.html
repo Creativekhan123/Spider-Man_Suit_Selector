@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STARK INDUSTRIES // SPIDER-MAN HOLOGRAPHIC SUIT SELECTOR</title>
+  
+  <!-- Google Fonts: Orbitron & Rajdhani for authentic Stark / Marvel sci-fi UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <!-- Local offline MediaPipe camera & hand landmark tracking -->
+  <script src="/mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="/mediapipe/hands/hands.js"></script>
+
+  <link rel="stylesheet" href="/src/styles/hud.css" />
+</head>
+<body class="stark-theme">
+  <!-- Hidden video capture element for MediaPipe and AR backdrop -->
+  <video id="webcam" playsinline autoplay muted></video>
+
+  <!-- Layer 1: AR Camera Canvas (Cinematic Stark Grading) -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Layer 2: WebGL 3D Canvas (Three.js Hologram Scene) -->
+  <canvas id="three-canvas"></canvas>
+
+  <!-- Layer 3: Dynamic Sci-Fi HUD Canvas (Fingertip Lasers, Reticles, Gestures) -->
+  <canvas id="hud-canvas"></canvas>
+
+  <!-- Layer 4: Interactive HUD DOM Interface -->
+  <div id="hud-overlay">
+    <!-- Top Header Bar -->
+    <header class="hud-header">
+      <div class="header-left">
+        <div class="stark-logo">
+          <span class="logo-icon">◈</span>
+          <span class="logo-text">STARK INDUSTRIES</span>
+        </div>
+        <div class="header-divider"></div>
+        <div class="sub-title">HOLOTABLE // MK-85 ARMORY PROTOCOL</div>
+      </div>
+
+      <div class="header-center">
+        <div class="hud-badge pulse-badge" id="system-status">
+          <span class="badge-dot"></span>
+          <span class="badge-text">SYSTEM ONLINE</span>
+        </div>
+        <div class="hud-badge" id="fps-badge">
+          <span class="badge-text">60 FPS</span>
+        </div>
+        <div class="hud-badge" id="gesture-badge">
+          <span class="badge-dot dot-cyan"></span>
+          <span class="badge-text" id="gesture-label">TRACKING: SEARCHING</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="time-display" id="hud-clock">00:00:00</div>
+        <button id="btn-fullscreen" class="hud-icon-btn" title="Toggle Fullscreen">⛶</button>
+      </div>
+    </header>
+
+    <!-- Camera Permission Banner (disappears once camera starts) -->
+    <div id="cam-permission-banner" class="cam-permission-banner">
+      <span class="banner-icon">📹</span>
+      <span class="banner-text">CLICK TO ACTIVATE WEBCAM & AIR-TOUCH HAND TRACKING</span>
+    </div>
+
+    <!-- Main Workspace Area -->
+    <main class="hud-workspace">
+      <!-- Left Diagnostics & Control Column -->
+      <aside class="hud-left-panel">
+        <!-- Top-Left: Spider-Man Suit Selector & Telemetry -->
+        <div class="panel-box suit-telemetry-card" id="telemetry-box">
+          <div class="box-header">
+            <span class="box-icon">🕷️</span>
+            <span class="box-title" id="active-suit-title">SPIDER-MAN // SUIT SELECTOR</span>
+          </div>
+          
+          <div class="suit-model-name" id="active-suit-name">ADVANCED SUIT 2.0</div>
+          <div class="suit-designation" id="active-suit-designation">DESIGNATION: EARTH-1048</div>
+
+          <div class="telemetry-bars">
+            <div class="telemetry-item">
+              <div class="bar-info">
+                <span>ARMOR INTEGRITY</span>
+                <span id="stat-armor">94%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="bar-armor" style="width: 94%;"></div></div>
+            </div>
+
+            <div class="telemetry-item">
+              <div class="bar-info">
+                <span>MOBILITY MATRIX</span>
+                <span id="stat-mobility">99%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="bar-mobility" style="width: 99%;"></div></div>
+            </div>
+
+            <div class="telemetry-item">
+              <div class="bar-info">
+                <span>NANOTECH DENSITY</span>
+                <span id="stat-nanotech">88%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="bar-nanotech" style="width: 88%;"></div></div>
+            </div>
+
+            <div class="telemetry-item">
+              <div class="bar-info">
+                <span>WEB SHOOTER FLUID</span>
+                <span id="stat-fluid">100%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="bar-fluid" style="width: 100%;"></div></div>
+            </div>
+          </div>
+
+          <div class="special-abilities">
+            <span class="ability-tag" id="ability-1">◈ WEB WINGS</span>
+            <span class="ability-tag" id="ability-2">◈ SPIDER-SENSE MK-IV</span>
+            <span class="ability-tag" id="ability-3">◈ TACHYON ARMS</span>
+          </div>
+        </div>
+
+        <!-- Left: Live Operator Camera Module (PiP) -->
+        <div class="panel-box operator-card" id="operator-box">
+          <div class="box-header">
+            <span class="box-icon">👤</span>
+            <span class="box-title">OPERATOR CAMERA VIEW</span>
+            <span class="rec-dot">● REC</span>
+          </div>
+          <div class="operator-feed-container">
+            <canvas id="operator-pip-canvas"></canvas>
+            <div class="face-target-bracket">
+              <div class="bracket tl"></div>
+              <div class="bracket tr"></div>
+              <div class="bracket bl"></div>
+              <div class="bracket br"></div>
+              <div class="bracket-tag">USER: VERIFIED</div>
+            </div>
+          </div>
+          <div class="operator-stats">
+            <div class="stat-row">
+              <span class="stat-label">SUBJECT:</span>
+              <span class="stat-val highlight">PARKER, PETER B.</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">NEURAL LINK:</span>
+              <span class="stat-val sync-val">SYNCED [99.8%]</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">AR PROTOCOL:</span>
+              <span class="stat-val" id="ar-mode-label">PASSTHROUGH</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Holo-Table Tools -->
+        <div class="left-quick-tools">
+          <button class="quick-tool-btn active" id="btn-ar-mode" title="Toggle AR Passthrough">👁️ AR VIEW</button>
+          <button class="quick-tool-btn" id="btn-render-mode" title="Toggle Shading">✨ SHADING</button>
+          <button class="quick-tool-btn active" id="btn-auto-rotate" title="Toggle Auto-Spin">🔄 AUTO-SPIN</button>
+          <button class="quick-tool-btn" id="btn-reset-view" title="Reset 3D View">↺ RESET</button>
+          <button class="quick-tool-btn" id="btn-audio-toggle" title="Toggle Sound">🔊 AUDIO</button>
+          <button class="quick-tool-btn" id="btn-help-modal" title="Gesture Guide">❔ GUIDE</button>
+        </div>
+      </aside>
+
+      <!-- Center-Right Hologram Pedestal Target Guide -->
+      <section class="hud-center-right-zone">
+        <div class="center-target-reticle" id="pedestal-drop-zone">
+          <div class="ring outer-ring"></div>
+          <div class="ring middle-ring"></div>
+          <div class="ring inner-ring"></div>
+          <div class="target-cross"></div>
+          <div class="target-label">
+            <span class="label-primary">CENTER-RIGHT INSPECTION STAGE</span>
+            <span class="label-sub">PINCH & DRAG SUIT HERE TO MATERIALIZE</span>
+          </div>
+        </div>
+
+        <div class="interaction-hints" id="interaction-hint">
+          <span class="hint-icon">👌</span>
+          <span class="hint-text">PINCH (Thumb + Index) & Drag suit to swap | Hold & Move to Rotate 360°</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Minimal Holographic Floor Nameplate Strip (Transparent, no bulky cards) -->
+    <div class="hud-bottom-lineup" id="bottom-lineup-strip">
+      <div class="lineup-labels-container" id="lineup-labels-container">
+        <!-- Rendered dynamically as sleek minimal text tags beneath each 3D model -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Gesture Guide Modal -->
+  <div class="hud-modal" id="modal-help">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">◈ STARK NEURAL GESTURE MANUAL</span>
+        <button class="modal-close" id="btn-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="gesture-guide-grid">
+          <div class="guide-item">
+            <div class="guide-icon">👌</div>
+            <div class="guide-title">PINCH TO GRAB / CLICK</div>
+            <div class="guide-desc">Touch <b>Thumb + Index Finger</b> together to lock onto a suit in the right rack.</div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-icon">🖐️ ➔ 🎯</div>
+            <div class="guide-title">DRAG & DROP TO STAGE</div>
+            <div class="guide-desc">Hold pinch and move your hand towards center. Release to materialize suit with shockwave rings!</div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-icon">🔄</div>
+            <div class="guide-title">360° SUIT ROTATION</div>
+            <div class="guide-desc">Pinch anywhere in the center area and move your hand left/right to freely inspect every angle.</div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-icon">🔍</div>
+            <div class="guide-title">DEPTH ZOOM</div>
+            <div class="guide-desc">Move your hand closer to or further from the camera to dynamically zoom in and out.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tool-btn primary-btn" id="btn-modal-ok">ACKNOWLEDGED</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Entry Point -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

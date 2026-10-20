@@ -1,0 +1,8 @@
+{
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Windows",
+  "extraPaths": [
+    "Project_JARVIS_HUD",
+    "C:\\Users\\FIOSA\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages"
+  ]
+}

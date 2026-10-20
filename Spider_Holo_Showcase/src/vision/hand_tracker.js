@@ -270,10 +270,12 @@ export class HandTracker {
   _startPinch(pos) {
     this.isPinched = true;
     this.prevPinchPos = { ...pos };
+    this.pinchStartPos = { ...pos };
+    this.pinchStartTime = performance.now();
     soundFX.playPinch();
 
-    // Check if pinch started over the bottom suit lineup (Y > 0.58)
-    if (pos.y > 0.58) {
+    // Check if pinch started over the bottom suit lineup (Y > 0.48 or left half X < 0.32)
+    if (pos.y > 0.48 || pos.x < 0.32) {
       this.currentMode = 'DRAGGING_SUIT';
       this.onDragStart(pos);
     } else {
@@ -305,13 +307,25 @@ export class HandTracker {
     soundFX.playRelease();
 
     if (this.currentMode === 'DRAGGING_SUIT') {
-      // Check if dropped near the center-right stage (X >= 0.30 and Y < 0.78)
-      const wasOverCenter = this.prevPinchPos && (this.prevPinchPos.x >= 0.30 && this.prevPinchPos.y < 0.78);
-      this.onDragEnd(wasOverCenter, this.prevPinchPos);
+      const now = performance.now();
+      const pinchDuration = now - (this.pinchStartTime || now);
+      const moveDist = this.pinchStartPos ? Math.hypot(this.prevPinchPos.x - this.pinchStartPos.x, this.prevPinchPos.y - this.pinchStartPos.y) : 0;
+
+      // Air-click / Tap on suit: quick pinch (< 750ms) without large drag (< 0.12)
+      const isAirClick = (pinchDuration < 750 && moveDist < 0.12);
+
+      // Or dragged towards center stage or pulled upward
+      const wasOverCenter = (this.prevPinchPos && (
+        (this.prevPinchPos.x >= 0.35 && this.prevPinchPos.y < 0.78) ||
+        this.prevPinchPos.y < 0.68
+      ));
+
+      this.onDragEnd(wasOverCenter || isAirClick, this.prevPinchPos, isAirClick);
     }
 
     this.currentMode = 'IDLE';
     this.prevPinchPos = null;
+    this.pinchStartPos = null;
   }
 
   _renderARCameraBackdrop(image) {

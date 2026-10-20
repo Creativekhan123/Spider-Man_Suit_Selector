@@ -211,16 +211,24 @@ html, body {
 
 /* Left Panel */
 .hud-left-panel {
-  width: 480px;
+  width: 440px;
+  max-width: 30vw;
   position: absolute;
   left: 24px;
   top: 68px;
-  bottom: 24px;
+  bottom: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  pointer-events: auto;
+  gap: 10px;
+  pointer-events: none;
   z-index: 10;
+}
+
+.hud-left-panel .panel-box,
+.hud-left-panel .left-quick-tools,
+.hud-left-panel button,
+.hud-left-panel a {
+  pointer-events: auto;
 }
 
 .left-quick-tools {

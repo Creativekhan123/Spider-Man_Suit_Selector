@@ -22,9 +22,9 @@ export class SuitRack3D {
     this.activeSuitId = null;
     this.hoveredSuitId = null;
 
-    // Lineup layout geometry
-    this.startX = -2.10;
-    this.endX = 2.10;
+    // Lineup layout geometry (shifted inward so slot 0 & 1 aren't jammed against the left screen edge)
+    this.startX = -1.75;
+    this.endX = 2.15;
     this.floorZ = 1.85;
     this.miniScale = 0.22;
 
@@ -236,7 +236,7 @@ export class SuitRack3D {
     }
 
     // Responsive targeting column cone across the bottom lineup
-    if (normY > 0.50) {
+    if (normY > 0.45 || normX < 0.28) {
       let closestSuit = null;
       let minScore = Infinity;
       this.slots.forEach(slot => {
@@ -246,14 +246,20 @@ export class SuitRack3D {
         const sy = p.y / window.innerHeight;
 
         const dx = Math.abs(normX - sx);
-        const dy = Math.max(0, (sy - normY) * 0.35);
+        const dy = Math.max(0, (sy - normY) * 0.30);
         const score = Math.hypot(dx, dy);
 
-        if (dx < 0.088 && score < minScore) {
+        if (dx < 0.13 && score < minScore) {
           minScore = score;
           closestSuit = slot.suitConfig;
         }
       });
+
+      // Dedicated left-edge guard: whenever hand is on the left (normX <= 0.33), lock directly to suit 0 or 1
+      if (!closestSuit && normX <= 0.33 && this.slots.length >= 2) {
+        closestSuit = normX < 0.22 ? this.slots[0].suitConfig : this.slots[1].suitConfig;
+      }
+
       return closestSuit;
     }
 

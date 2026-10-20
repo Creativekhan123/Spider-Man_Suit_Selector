@@ -27,7 +27,7 @@ class HolographicApp {
       onGestureUpdate: (state) => this._onGestureUpdate(state),
       onDragStart: (pos) => this._onHandDragStart(pos),
       onDragMove: (pos, dx, dy) => this._onHandDragMove(pos, dx, dy),
-      onDragEnd: (overCenter, pos) => this._onHandDragEnd(overCenter, pos),
+      onDragEnd: (overCenter, pos, isAirClick) => this._onHandDragEnd(overCenter, pos, isAirClick),
       onCenterRotate: (dx, dy) => this._onCenterRotate(dx, dy),
       onCenterZoom: (delta) => this._onCenterZoom(delta)
     });
@@ -401,8 +401,16 @@ class HolographicApp {
   }
 
   _onHandDragStart(pos) {
-    // 1. Raycast 3D floor models
-    let targetSuit = this.holoScene.suitRack ? this.holoScene.suitRack.pickSlot(pos.x, pos.y) : null;
+    // 0. Priority: If user was already locking onto a suit with the laser tether, grab that suit!
+    let targetSuit = null;
+    if (this.holoScene.suitRack && this.holoScene.suitRack.hoveredSuitId) {
+      targetSuit = SUITS_DATABASE.find(s => s.id === this.holoScene.suitRack.hoveredSuitId);
+    }
+
+    // 1. Raycast 3D floor models & screen coordinates
+    if (!targetSuit) {
+      targetSuit = this.holoScene.suitRack ? this.holoScene.suitRack.pickSlot(pos.x, pos.y) : null;
+    }
 
     // 2. Check minimal lineup labels under hand
     if (!targetSuit) {
@@ -411,17 +419,23 @@ class HolographicApp {
       const screenY = pos.y * window.innerHeight;
       items.forEach(item => {
         const rect = item.getBoundingClientRect();
-        // Allow pinching on label or 150px above it where the 3D model stands
-        if (screenX >= (rect.left - 20) && screenX <= (rect.right + 20) && screenY >= (rect.top - 150) && screenY <= rect.bottom + 20) {
+        // Allow pinching on label or 200px above it where the 3D model stands
+        if (screenX >= (rect.left - 40) && screenX <= (rect.right + 40) && screenY >= (rect.top - 200) && screenY <= rect.bottom + 40) {
           targetSuit = SUITS_DATABASE[parseInt(item.dataset.index, 10)];
         }
       });
     }
 
-    // 3. Fallback based on X when hand is at the bottom
-    if (!targetSuit && SUITS_DATABASE.length > 0 && pos.y > 0.60) {
-      const idx = Math.max(0, Math.min(SUITS_DATABASE.length - 1, Math.floor(pos.x * SUITS_DATABASE.length)));
-      targetSuit = SUITS_DATABASE[idx];
+    // 3. Fallback based on X when hand is at the bottom or left edge
+    if (!targetSuit && SUITS_DATABASE.length > 0) {
+      if (pos.x <= 0.22) {
+        targetSuit = SUITS_DATABASE[0]; // Advanced Suit 2.0
+      } else if (pos.x <= 0.33) {
+        targetSuit = SUITS_DATABASE[1]; // Webbed Raimi Suit
+      } else if (pos.y > 0.45) {
+        const idx = Math.max(0, Math.min(SUITS_DATABASE.length - 1, Math.floor(pos.x * SUITS_DATABASE.length)));
+        targetSuit = SUITS_DATABASE[idx];
+      }
     }
 
     if (targetSuit) {
@@ -444,7 +458,7 @@ class HolographicApp {
     }
   }
 
-  _onHandDragEnd(overCenter, pos) {
+  _onHandDragEnd(overCenter, pos, isAirClick) {
     const dropZone = document.getElementById('pedestal-drop-zone');
     if (dropZone) dropZone.classList.remove('active-drag');
 
@@ -452,14 +466,14 @@ class HolographicApp {
       this.draggedSuitCard.classList.remove('dragging');
     }
 
-    // Center-right stage check: x > 0.35 and y < 0.78
-    const overStage = pos && (pos.x >= 0.35 && pos.y < 0.78);
+    // Should deploy if dropped over center, over stage, pulled upward, or was a direct air-click!
+    const shouldDeploy = overCenter || isAirClick || (pos && (pos.y < 0.70 || (pos.x >= 0.35 && pos.y < 0.78)));
 
-    if ((overCenter || overStage) && this.draggedSuitConfig) {
+    if (shouldDeploy && this.draggedSuitConfig) {
       this.selectSuit(this.draggedSuitConfig);
     }
 
-    this.holoScene.finishSuitDrag(overCenter || overStage);
+    this.holoScene.finishSuitDrag(shouldDeploy);
     this.draggedSuitConfig = null;
     this.draggedSuitCard = null;
   }

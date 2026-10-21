@@ -216,15 +216,15 @@ html, body {
 
 /* Left Panel */
 .hud-left-panel {
-  width: 440px;
-  max-width: 30vw;
+  width: 380px;
+  max-width: 28vw;
   position: absolute;
-  left: 24px;
-  top: 68px;
+  left: 20px;
+  top: 60px;
   bottom: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   pointer-events: none;
   z-index: 10;
 }
@@ -368,13 +368,13 @@ html, body {
 
 .operator-feed-container {
   width: 100%;
-  height: 260px;
+  height: 130px;
   background: #02060c;
   border: 1px solid rgba(0, 240, 255, 0.35);
   border-radius: 6px;
   position: relative;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   box-shadow: inset 0 0 25px rgba(0, 240, 255, 0.12), 0 4px 20px rgba(0, 0, 0, 0.6);
 }
 
@@ -382,7 +382,6 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1); /* mirror */
   display: block;
 }
 
@@ -479,10 +478,10 @@ html, body {
 }
 
 .telemetry-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  margin-bottom: 8px;
 }
 
 .telemetry-item {
@@ -914,7 +913,7 @@ html, body {
    ========================================================================== */
 
 /* 1. Mobile Landscape (Standard Android Phone Landscape Mode) & Small Screens */
-@media (max-width: 960px), (max-height: 550px) {
+@media (max-width: 1200px), (max-height: 680px) {
   /* Header */
   .hud-header {
     height: 38px;
@@ -1032,31 +1031,39 @@ html, body {
   }
 
   .operator-feed-container {
-    height: 95px;
-    margin-bottom: 4px;
+    height: 82px;
+    margin-bottom: 2px;
   }
 
   .operator-stats {
-    font-size: 0.54rem;
-    gap: 3px;
-    padding-top: 3px;
+    display: none !important;
   }
 
   .left-quick-tools {
-    gap: 4px;
+    gap: 3px;
     margin-top: 2px;
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .quick-tool-btn {
-    font-size: 0.54rem;
+    font-size: 0.50rem;
     padding: 3px 2px;
     letter-spacing: 0.2px;
   }
 
-  /* Bottom Floor Lineup Labels - Prevent text collisions! */
+  @media (max-height: 440px) {
+    .left-quick-tools {
+      display: none !important;
+    }
+  }
+
+  /* Bottom Floor Lineup Labels - Positioned to the right of the left diagnostic panel */
   .hud-bottom-lineup {
     bottom: 2px;
-    width: 100vw;
+    left: auto;
+    right: 8px;
+    width: calc(100vw - 260px);
+    transform: none;
   }
 
   .lineup-labels-container {

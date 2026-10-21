@@ -113,15 +113,21 @@ export class HoloScene {
 
     // Dark reflective ground plane
     const floorGeo = new THREE.PlaneGeometry(30, 30);
-    const floorMat = new THREE.MeshBasicMaterial({
+    this.floorMat = new THREE.MeshBasicMaterial({
       color: 0x01050d,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.35 // Crisp visibility of real room in AR passthrough!
     });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    const floor = new THREE.Mesh(floorGeo, this.floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.01;
     this.scene.add(floor);
+  }
+
+  setARMode(isAr) {
+    if (this.floorMat) {
+      this.floorMat.opacity = isAr ? 0.30 : 0.85;
+    }
   }
 
   _initPostprocessing() {
@@ -302,7 +308,9 @@ export class HoloScene {
     const aspect = w / h;
     this.camera.aspect = aspect;
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || w < 900;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || (navigator.maxTouchPoints > 1 && window.screen.height < 1050)
+      || (w < 1150 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
 
     if (aspect < 1.0) {
       // Portrait mode (phone held vertically)
@@ -312,19 +320,19 @@ export class HoloScene {
       if (this.suitRack) {
         this.suitRack.repositionSlots(-1.35, 1.35, 0.16);
       }
-    } else if (h < 550) {
-      // Mobile landscape mode (phone held horizontally like in user's screenshot)
+    } else if (h <= 680 || w <= 1150) {
+      // Mobile landscape / Phone in Desktop site mode / Small screens
       this.camera.fov = 42;
-      this.camera.position.set(0.08, 1.35, 4.8);
-      this.centerStageGroup.position.set(0.95, 0, 0);
+      this.camera.position.set(0.18, 1.35, 4.8);
+      this.centerStageGroup.position.set(1.10, 0, 0);
       if (this.suitRack) {
-        this.suitRack.repositionSlots(-1.55, 1.90, 0.19);
+        this.suitRack.repositionSlots(-0.85, 2.25, 0.18);
       }
     } else {
-      // Desktop / Tablet landscape
+      // Desktop / Large screen landscape
       this.camera.fov = 45;
       this.camera.position.set(0.1, 1.45, 5.0);
-      this.centerStageGroup.position.set(1.15, 0, 0);
+      this.centerStageGroup.position.set(1.20, 0, 0);
       if (this.suitRack) {
         this.suitRack.repositionSlots(-1.75, 2.15, 0.22);
       }

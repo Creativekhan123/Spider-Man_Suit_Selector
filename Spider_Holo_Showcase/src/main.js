@@ -95,6 +95,7 @@ class HolographicApp {
     if (btnAr) {
       btnAr.addEventListener('click', () => {
         const isAr = this.handTracker.toggleARMode();
+        this.holoScene.setARMode(isAr);
         btnAr.classList.toggle('active', isAr);
         const modeLabel = document.getElementById('ar-mode-label');
         if (modeLabel) modeLabel.textContent = isAr ? 'PASSTHROUGH' : 'LAB WORKSHOP';
@@ -198,9 +199,6 @@ class HolographicApp {
         if (e.target.closest('#btn-switch-cam')) return;
         operatorBox.classList.toggle('collapsed');
       });
-      if (window.innerHeight < 550 || window.innerWidth < 768) {
-        operatorBox.classList.add('collapsed');
-      }
     }
   }
 

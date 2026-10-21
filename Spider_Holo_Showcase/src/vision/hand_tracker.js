@@ -52,7 +52,9 @@ export class HandTracker {
         locateFile: (file) => `/mediapipe/hands/${file}`
       });
 
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || (navigator.maxTouchPoints > 1 && window.screen.height < 1050)
+        || (window.innerWidth < 1150 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
       this.hands.setOptions({
         maxNumHands: isMobile ? 1 : 2,
         modelComplexity: isMobile ? 0 : 1, // 0 = Lite (2x faster on mobile), 1 = Full
@@ -85,7 +87,15 @@ export class HandTracker {
 
       if (count > 0) {
         if (typeof indexOrDeviceId === 'number') {
-          targetIndex = ((indexOrDeviceId % count) + count) % count;
+          // If starting or cycling with index 0 on mobile, prefer front/user camera
+          if (indexOrDeviceId === 0) {
+            const frontIdx = this.videoDevices.findIndex(d =>
+              /front|user|selfie|facing front/i.test(d.label)
+            );
+            targetIndex = frontIdx !== -1 ? frontIdx : 0;
+          } else {
+            targetIndex = ((indexOrDeviceId % count) + count) % count;
+          }
           targetDevice = this.videoDevices[targetIndex];
         } else if (typeof indexOrDeviceId === 'string') {
           const foundIdx = this.videoDevices.findIndex(d => d.deviceId === indexOrDeviceId);
@@ -111,12 +121,16 @@ export class HandTracker {
         try { await this.camera.stop(); } catch (e) { }
       }
 
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || (navigator.maxTouchPoints > 1 && window.screen.height < 1050)
+        || (window.innerWidth < 1150 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
       const videoConstraints = {
         width: { ideal: isMobileDevice ? 640 : 1280 },
         height: { ideal: isMobileDevice ? 480 : 720 }
       };
-      if (deviceId) {
+
+      // Only force exact deviceId if device already has a verified label; otherwise request user facing mode!
+      if (deviceId && targetDevice && targetDevice.label) {
         videoConstraints.deviceId = { exact: deviceId };
       } else {
         videoConstraints.facingMode = 'user';
@@ -134,6 +148,20 @@ export class HandTracker {
       // Refresh camera devices list after permission granted (gives real device labels)
       await this.getAvailableCameras();
 
+      // Synchronize targetIndex with the real camera track
+      const activeTrack = stream.getVideoTracks()[0];
+      if (activeTrack && this.videoDevices.length > 0) {
+        const settings = activeTrack.getSettings ? activeTrack.getSettings() : {};
+        if (settings.deviceId) {
+          const foundIdx = this.videoDevices.findIndex(d => d.deviceId === settings.deviceId);
+          if (foundIdx !== -1) targetIndex = foundIdx;
+        } else if (activeTrack.label) {
+          const foundIdx = this.videoDevices.findIndex(d => d.label === activeTrack.label);
+          if (foundIdx !== -1) targetIndex = foundIdx;
+        }
+      }
+      this.activeCameraIndex = targetIndex;
+
       // Start/Restart MediaPipe Camera utility loop
       const CameraClass = window.Camera || (await import('@mediapipe/camera_utils')).Camera;
       this.camera = new CameraClass(this.videoElement, {
@@ -142,8 +170,8 @@ export class HandTracker {
             await this.hands.send({ image: this.videoElement });
           }
         },
-        width: 1280,
-        height: 720
+        width: isMobileDevice ? 640 : 1280,
+        height: isMobileDevice ? 480 : 720
       });
       await this.camera.start();
 
@@ -154,7 +182,7 @@ export class HandTracker {
         index: targetIndex,
         total: Math.max(1, this.videoDevices.length),
         label: label,
-        deviceId: deviceId
+        deviceId: this.videoDevices[targetIndex] ? this.videoDevices[targetIndex].deviceId : deviceId
       };
     } catch (err) {
       console.error('[HandTracker] Failed to switch camera stream:', err);
@@ -370,9 +398,9 @@ export class HandTracker {
     // Cinematic Stark Post-Color Grade
     // 1. Dark Vignette & Sci-Fi Tint
     const gradient = this.bgCtx.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, w * 0.85);
-    gradient.addColorStop(0, 'rgba(2, 8, 20, 0.40)');
-    gradient.addColorStop(0.65, 'rgba(2, 8, 20, 0.68)');
-    gradient.addColorStop(1, 'rgba(1, 4, 10, 0.92)');
+    gradient.addColorStop(0, 'rgba(2, 8, 20, 0.10)');
+    gradient.addColorStop(0.65, 'rgba(2, 8, 20, 0.32)');
+    gradient.addColorStop(1, 'rgba(1, 4, 10, 0.65)');
 
     this.bgCtx.fillStyle = gradient;
     this.bgCtx.fillRect(0, 0, w, h);

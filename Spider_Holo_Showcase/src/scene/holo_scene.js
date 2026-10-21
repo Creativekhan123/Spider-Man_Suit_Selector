@@ -41,6 +41,7 @@ export class HoloScene {
     this._initPostprocessing();
 
     window.addEventListener('resize', () => this._onResize());
+    this._onResize();
   }
 
   _initThree() {
@@ -296,10 +297,45 @@ export class HoloScene {
   }
 
   _onResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const aspect = w / h;
+    this.camera.aspect = aspect;
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || w < 900;
+
+    if (aspect < 1.0) {
+      // Portrait mode (phone held vertically)
+      this.camera.fov = 56;
+      this.camera.position.set(0, 1.40, 6.2);
+      this.centerStageGroup.position.set(0, 0.45, 0);
+      if (this.suitRack) {
+        this.suitRack.repositionSlots(-1.35, 1.35, 0.16);
+      }
+    } else if (h < 550) {
+      // Mobile landscape mode (phone held horizontally like in user's screenshot)
+      this.camera.fov = 42;
+      this.camera.position.set(0.08, 1.35, 4.8);
+      this.centerStageGroup.position.set(0.95, 0, 0);
+      if (this.suitRack) {
+        this.suitRack.repositionSlots(-1.55, 1.90, 0.19);
+      }
+    } else {
+      // Desktop / Tablet landscape
+      this.camera.fov = 45;
+      this.camera.position.set(0.1, 1.45, 5.0);
+      this.centerStageGroup.position.set(1.15, 0, 0);
+      if (this.suitRack) {
+        this.suitRack.repositionSlots(-1.75, 2.15, 0.22);
+      }
+    }
+
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.composer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    this.renderer.setSize(w, h);
+    if (this.composer) {
+      this.composer.setSize(w, h);
+    }
   }
 
   render() {

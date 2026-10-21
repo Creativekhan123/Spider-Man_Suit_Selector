@@ -34,6 +34,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman2',
     name: 'ADVANCED SUIT 2.0',
+    shortName: 'ADVANCED 2.0',
     designation: 'EARTH-1048 // MARVELS SPIDER-MAN 2',
     format: 'fbx',
     url: '/models/spider man2/source/source/spiderman2.fbx',
@@ -47,6 +48,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman3',
     name: 'WEBBED RAIMI SUIT',
+    shortName: 'RAIMI SUIT',
     designation: 'EARTH-96283 // SAM RAIMI TRILOGY',
     format: 'fbx',
     url: '/models/spider-man3/source/SPIDERMAN 3.fbx',
@@ -59,6 +61,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman4',
     name: 'STEALTH "NIGHT MONKEY"',
+    shortName: 'STEALTH',
     designation: 'EARTH-199999 // SHIELD BLACK-OPS',
     format: 'gltf',
     url: '/models/spider-man4/spiderman4.gltf',
@@ -70,6 +73,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman5',
     name: 'STARK ENHANCED SUIT',
+    shortName: 'STARK TECH',
     designation: 'EARTH-199999 // STARK TECH HOMECOMING',
     format: 'obj',
     url: '/models/spider-man5/source/spiderman5.obj',
@@ -82,6 +86,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman6',
     name: 'IRON SPIDER (MK-I)',
+    shortName: 'IRON SPIDER',
     designation: 'EARTH-199999 // AVENGERS TITAN SPEC',
     format: 'fbx',
     url: '/models/spider-man6/source/spiderman6.fbx',
@@ -93,6 +98,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman7',
     name: 'VINTAGE COMIC SUIT',
+    shortName: 'COMIC SUIT',
     designation: 'EARTH-616 // ORIGINAL DITKO CLASSIC',
     format: 'fbx',
     url: '/models/spider-man7/source/Spider-Man.fbx',
@@ -104,6 +110,7 @@ export const SUITS_DATABASE = [
   {
     id: 'spiderman8',
     name: 'INTEGRATED NANOTECH',
+    shortName: 'NANOTECH',
     designation: 'EARTH-199999 // NO WAY HOME FINAL',
     format: 'fbx',
     url: '/models/spider-man8/source/spiderman8.fbx',

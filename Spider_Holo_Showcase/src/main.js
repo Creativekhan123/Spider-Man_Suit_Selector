@@ -181,6 +181,27 @@ class HolographicApp {
     const closeModal = () => modalHelp && modalHelp.classList.remove('open');
     if (btnModalClose) btnModalClose.addEventListener('click', closeModal);
     if (btnModalOk) btnModalOk.addEventListener('click', closeModal);
+
+    // Mobile / Touch optimizations
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const hintText = document.querySelector('#interaction-hint .hint-text');
+    if (hintText && isTouch) {
+      hintText.textContent = 'TAP or DRAG suit to swap | SWIPE to rotate 360°';
+    }
+
+    const operatorBox = document.getElementById('operator-box');
+    const operatorHeader = operatorBox ? operatorBox.querySelector('.box-header') : null;
+    if (operatorHeader) {
+      operatorHeader.style.cursor = 'pointer';
+      operatorHeader.title = 'Click to expand/collapse camera view';
+      operatorHeader.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-switch-cam')) return;
+        operatorBox.classList.toggle('collapsed');
+      });
+      if (window.innerHeight < 550 || window.innerWidth < 768) {
+        operatorBox.classList.add('collapsed');
+      }
+    }
   }
 
   _updateCameraUI(res) {
@@ -222,7 +243,8 @@ class HolographicApp {
 
       item.innerHTML = `
         <span class="lineup-mk-tag">MK-0${index + 1}</span>
-        <span class="lineup-suit-title">${suit.name}</span>
+        <span class="lineup-suit-title full-title">${suit.name}</span>
+        <span class="lineup-suit-title short-title">${suit.shortName || suit.name}</span>
         <div class="lineup-indicator-bar"></div>
       `;
 
@@ -324,6 +346,13 @@ class HolographicApp {
         this.selectSuit(clickedSuit);
       }
 
+      isMouseDown = false;
+      clickedSuit = null;
+      isDraggingModel = false;
+      isRotatingCenter = false;
+    });
+
+    window.addEventListener('pointercancel', () => {
       isMouseDown = false;
       clickedSuit = null;
       isDraggingModel = false;

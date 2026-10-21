@@ -52,11 +52,12 @@ export class HandTracker {
         locateFile: (file) => `/mediapipe/hands/${file}`
       });
 
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       this.hands.setOptions({
-        maxNumHands: 2,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.65,
-        minTrackingConfidence: 0.65
+        maxNumHands: isMobile ? 1 : 2,
+        modelComplexity: isMobile ? 0 : 1, // 0 = Lite (2x faster on mobile), 1 = Full
+        minDetectionConfidence: 0.55,
+        minTrackingConfidence: 0.55
       });
 
       this.hands.onResults((results) => this._onResults(results));
@@ -110,9 +111,10 @@ export class HandTracker {
         try { await this.camera.stop(); } catch (e) { }
       }
 
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const videoConstraints = {
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+        width: { ideal: isMobileDevice ? 640 : 1280 },
+        height: { ideal: isMobileDevice ? 480 : 720 }
       };
       if (deviceId) {
         videoConstraints.deviceId = { exact: deviceId };

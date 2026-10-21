@@ -141,6 +141,27 @@ export class SuitRack3D {
     });
   }
 
+  repositionSlots(newStartX, newEndX, newScale) {
+    if (newStartX !== undefined) this.startX = newStartX;
+    if (newEndX !== undefined) this.endX = newEndX;
+    if (newScale !== undefined) this.miniScale = newScale;
+
+    const count = this.slots.length;
+    if (count <= 1) return;
+    const stepX = (this.endX - this.startX) / (count - 1);
+
+    this.slots.forEach((slot, index) => {
+      const posX = this.startX + index * stepX;
+      const posY = 0.02;
+      const posZ = this.floorZ - Math.abs(posX) * 0.08;
+      slot.slotGroup.position.set(posX, posY, posZ);
+
+      if (slot.miniModel) {
+        slot.miniModel.scale.set(this.miniScale, this.miniScale, this.miniScale);
+      }
+    });
+  }
+
   async _loadModelForSlot(slot) {
     try {
       const baseModel = await this.modelLoader.loadSuit(slot.suitConfig);

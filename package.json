@@ -1,0 +1,10 @@
+{
+  "name": "spider-man-suit-selector",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm --prefix Spider_Holo_Showcase install && npm --prefix Spider_Holo_Showcase run build",
+    "dev": "npm --prefix Spider_Holo_Showcase run dev",
+    "start": "npm --prefix Spider_Holo_Showcase run dev"
+  }
+}

@@ -26,10 +26,14 @@ export class OverlayRenderer {
 
     const { hands, isPinched, pinchPos, mode } = gestureState;
 
-    // 1. Draw Hand Skeleton Overlays
+    // 0. Draw Biometric Operator Lock-On Reticle over user in background
+    this._drawBiometricOperatorReticle(w, h);
+
+    // 1. Draw Hand Skeleton Overlays & Palm Arc Reactors
     if (hands && hands.length > 0) {
       for (const hand of hands) {
         this._drawHandSkeleton(hand, w, h);
+        this._drawPalmArcReactor(hand, w, h, isPinched);
         this._drawFingertipReticle(hand, w, h, isPinched);
       }
     }
@@ -102,6 +106,119 @@ export class OverlayRenderer {
       this.ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
       this.ctx.fill();
     }
+    this.ctx.restore();
+  }
+
+  _drawBiometricOperatorReticle(w, h) {
+    if (w < 700) return;
+
+    const cx = w * 0.48;
+    const cy = h * 0.30;
+    const bw = Math.min(260, w * 0.24);
+    const bh = Math.min(280, h * 0.38);
+    const x1 = cx - bw / 2;
+    const y1 = cy - bh / 2;
+    const x2 = cx + bw / 2;
+    const y2 = cy + bh / 2;
+    const bLen = 22;
+
+    this.ctx.save();
+    this.ctx.strokeStyle = 'rgba(0, 240, 255, 0.42)';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.shadowColor = '#00f0ff';
+    this.ctx.shadowBlur = 6;
+
+    // 4 Corner Brackets
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y1 + bLen);
+    this.ctx.lineTo(x1, y1);
+    this.ctx.lineTo(x1 + bLen, y1);
+    this.ctx.stroke();
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(x2 - bLen, y1);
+    this.ctx.lineTo(x2, y1);
+    this.ctx.lineTo(x2, y1 + bLen);
+    this.ctx.stroke();
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y2 - bLen);
+    this.ctx.lineTo(x1, y2);
+    this.ctx.lineTo(x1 + bLen, y2);
+    this.ctx.stroke();
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(x2 - bLen, y2);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.lineTo(x2, y2 - bLen);
+    this.ctx.stroke();
+
+    // Subtle moving vertical scanline within bracket
+    const scanProgress = (this.time * 0.6) % 1.0;
+    const scanLineY = y1 + bh * scanProgress;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1 + 10, scanLineY);
+    this.ctx.lineTo(x2 - 10, scanLineY);
+    this.ctx.strokeStyle = 'rgba(0, 240, 255, 0.22)';
+    this.ctx.lineWidth = 1;
+    this.ctx.setLineDash([4, 4]);
+    this.ctx.stroke();
+    this.ctx.setLineDash([]);
+
+    // Telemetry text labels
+    this.ctx.shadowBlur = 0;
+    this.ctx.font = '9px "Share Tech Mono", monospace';
+    this.ctx.fillStyle = '#00f0ff';
+    this.ctx.fillText('◈ BIOMETRIC LOCK // USER VERIFIED', x1, y1 - 8);
+
+    this.ctx.fillStyle = 'rgba(0, 240, 255, 0.7)';
+    this.ctx.fillText('NEURAL LINK: 99.8% // COMBAT READY', x1, y2 + 15);
+
+    this.ctx.restore();
+  }
+
+  _drawPalmArcReactor(hand, w, h, isPinched) {
+    const wrist = hand[0];
+    const middleMcp = hand[9];
+    if (!wrist || !middleMcp) return;
+
+    const px = (wrist.x * 0.45 + middleMcp.x * 0.55) * w;
+    const py = (wrist.y * 0.45 + middleMcp.y * 0.55) * h;
+    const radius = isPinched ? 30 : 24;
+
+    this.ctx.save();
+    this.ctx.translate(px, py);
+
+    // 1. Outer dashed tech ring
+    this.ctx.save();
+    this.ctx.rotate(this.time * 1.5);
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    this.ctx.strokeStyle = isPinched ? 'rgba(0, 255, 255, 0.9)' : 'rgba(0, 240, 255, 0.42)';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.setLineDash([4, 4]);
+    this.ctx.stroke();
+    this.ctx.restore();
+
+    // 2. Inner counter-rotating ring
+    this.ctx.save();
+    this.ctx.rotate(-this.time * 2.2);
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, radius * 0.65, 0, Math.PI * 2);
+    this.ctx.strokeStyle = isPinched ? '#ffffff' : 'rgba(0, 240, 255, 0.65)';
+    this.ctx.lineWidth = isPinched ? 2 : 1;
+    this.ctx.setLineDash([6, 5]);
+    this.ctx.stroke();
+    this.ctx.restore();
+
+    // 3. Center Repulsor Core dot
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, isPinched ? 6 : 3.5, 0, Math.PI * 2);
+    this.ctx.fillStyle = isPinched ? '#ffffff' : 'rgba(0, 255, 255, 0.85)';
+    this.ctx.shadowColor = '#00ffff';
+    this.ctx.shadowBlur = isPinched ? 16 : 8;
+    this.ctx.fill();
+
     this.ctx.restore();
   }
 

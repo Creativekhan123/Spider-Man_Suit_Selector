@@ -55,10 +55,9 @@ export class HoloScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
+    this.renderer.setClearColor(0x000000, 0); // 100% transparent clear for AR video
 
     this.scene = new THREE.Scene();
-    // Subtle sci-fi lab fog
-    this.scene.fog = new THREE.FogExp2(0x020814, 0.04);
 
     this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     this.camera.position.set(0.1, 1.45, 5.0);
@@ -107,26 +106,27 @@ export class HoloScene {
     // High-tech floor grid plane
     const gridHelper = new THREE.GridHelper(20, 40, 0x00f0ff, 0x003366);
     gridHelper.position.y = 0;
-    gridHelper.material.opacity = 0.35;
+    gridHelper.material.opacity = 0.25;
     gridHelper.material.transparent = true;
     this.scene.add(gridHelper);
 
-    // Dark reflective ground plane
-    const floorGeo = new THREE.PlaneGeometry(30, 30);
+    // Subtle dark floor shadow plane under pedestal
+    const floorGeo = new THREE.PlaneGeometry(16, 16);
     this.floorMat = new THREE.MeshBasicMaterial({
       color: 0x01050d,
       transparent: true,
-      opacity: 0.35 // Crisp visibility of real room in AR passthrough!
+      opacity: 0.05
     });
-    const floor = new THREE.Mesh(floorGeo, this.floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.01;
-    this.scene.add(floor);
+    this.floor = new THREE.Mesh(floorGeo, this.floorMat);
+    this.floor.rotation.x = -Math.PI / 2;
+    this.floor.position.y = -0.01;
+    this.floor.visible = false; // Hidden in default AR passthrough
+    this.scene.add(this.floor);
   }
 
   setARMode(isAr) {
-    if (this.floorMat) {
-      this.floorMat.opacity = isAr ? 0.30 : 0.85;
+    if (this.floor) {
+      this.floor.visible = !isAr;
     }
   }
 
@@ -412,8 +412,7 @@ export class HoloScene {
       this.modelLoader.updateShaders(this.draggedSuitMesh, delta, time);
     }
 
-    // Render postprocessed scene
-
-    this.composer.render();
+    // Render 3D scene directly with pristine WebGL alpha transparency for camera video
+    this.renderer.render(this.scene, this.camera);
   }
 }

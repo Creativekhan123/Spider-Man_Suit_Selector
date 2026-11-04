@@ -68,7 +68,8 @@ export const SUITS_DATABASE = [
     icon: '🥷',
     stats: { armor: 82, mobility: 100, nanotech: 65, fluid: 90 },
     abilities: ['OPTICAL CAMOUFLAGE', 'ACOUSTIC DAMPENER', 'FLIP GOGGLES'],
-    targetHeight: 2.7
+    targetHeight: 2.7,
+    rotationOffset: [0, Math.PI, 0]
   },
   {
     id: 'spiderman5',

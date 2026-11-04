@@ -377,7 +377,9 @@ export class HandTracker {
     this.bgCtx.scale(-1, 1);
 
     // Draw camera image with cover aspect ratio
-    const videoAspect = image.width / image.height;
+    const vidW = image.videoWidth || image.width || 1280;
+    const vidH = image.videoHeight || image.height || 720;
+    const videoAspect = vidW / vidH;
     const screenAspect = w / h;
     let drawW = w;
     let drawH = h;
@@ -396,13 +398,27 @@ export class HandTracker {
     this.bgCtx.restore();
 
     // Cinematic Stark Post-Color Grade
-    // 1. Dark Vignette & Sci-Fi Tint
-    const gradient = this.bgCtx.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, w * 0.85);
-    gradient.addColorStop(0, 'rgba(2, 8, 20, 0.10)');
-    gradient.addColorStop(0.65, 'rgba(2, 8, 20, 0.32)');
-    gradient.addColorStop(1, 'rgba(1, 4, 10, 0.65)');
+    // 1a. Subtle Cool Sci-Fi Lab Wash (tints warm indoor lighting to cool Marvel lab tones)
+    this.bgCtx.fillStyle = 'rgba(0, 180, 255, 0.05)';
+    this.bgCtx.fillRect(0, 0, w, h);
+
+    // 1b. Gentle Sci-Fi Vignette: keeps center user clearly visible while darkening outer HUD perimeter for contrast
+    const gradient = this.bgCtx.createRadialGradient(w / 2, h / 2, h * 0.25, w / 2, h / 2, w * 0.85);
+    gradient.addColorStop(0, 'rgba(2, 8, 20, 0.08)');
+    gradient.addColorStop(0.65, 'rgba(2, 8, 20, 0.28)');
+    gradient.addColorStop(1, 'rgba(1, 4, 10, 0.68)');
 
     this.bgCtx.fillStyle = gradient;
+    this.bgCtx.fillRect(0, 0, w, h);
+
+    // 1c. Holographic Pedestal Light Spill onto the physical room floor
+    const glowX = w * 0.64;
+    const glowY = h * 0.78;
+    const floorGlow = this.bgCtx.createRadialGradient(glowX, glowY, 15, glowX, glowY, w * 0.26);
+    floorGlow.addColorStop(0, 'rgba(0, 240, 255, 0.16)');
+    floorGlow.addColorStop(0.5, 'rgba(0, 160, 255, 0.06)');
+    floorGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    this.bgCtx.fillStyle = floorGlow;
     this.bgCtx.fillRect(0, 0, w, h);
 
     // 2. AR Ground Perspective Grid Projection (Blends real room floor with 3D Holograms)

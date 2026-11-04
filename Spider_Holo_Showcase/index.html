@@ -123,23 +123,13 @@
           </div>
         </div>
 
-        <!-- Left: Live Operator Camera Module (PiP) -->
+        <!-- Left: Operator Link Telemetry (Camera running full-screen in background) -->
         <div class="panel-box operator-card" id="operator-box">
           <div class="box-header">
             <span class="box-icon">👤</span>
-            <span class="box-title">OPERATOR CAMERA VIEW</span>
+            <span class="box-title">OPERATOR LINK</span>
             <button id="btn-switch-cam" class="cam-switch-btn" title="Click to Switch Camera Device / Index">📷 CAM [1/1]</button>
-            <span class="rec-dot">● REC</span>
-          </div>
-          <div class="operator-feed-container">
-            <canvas id="operator-pip-canvas"></canvas>
-            <div class="face-target-bracket">
-              <div class="bracket tl"></div>
-              <div class="bracket tr"></div>
-              <div class="bracket bl"></div>
-              <div class="bracket br"></div>
-              <div class="bracket-tag">USER: VERIFIED</div>
-            </div>
+            <span class="rec-dot">● LIVE</span>
           </div>
           <div class="operator-stats">
             <div class="stat-row">
@@ -152,7 +142,7 @@
             </div>
             <div class="stat-row">
               <span class="stat-label">AR PROTOCOL:</span>
-              <span class="stat-val" id="ar-mode-label">PASSTHROUGH</span>
+              <span class="stat-val highlight" id="ar-mode-label">PASSTHROUGH</span>
             </div>
           </div>
         </div>
@@ -165,6 +155,78 @@
           <button class="quick-tool-btn" id="btn-reset-view" title="Reset 3D View">↺ RESET</button>
           <button class="quick-tool-btn" id="btn-audio-toggle" title="Toggle Sound">🔊 AUDIO</button>
           <button class="quick-tool-btn" id="btn-help-modal" title="Gesture Guide">❔ GUIDE</button>
+        </div>
+      </aside>
+
+      <!-- Right Holographic Tactical Display -->
+      <aside class="hud-right-panel">
+        <!-- Top-Right: Stark Arc Reactor Core Telemetry -->
+        <div class="panel-box arc-core-card">
+          <div class="box-header">
+            <span class="box-icon">⚛️</span>
+            <span class="box-title">ARC CORE TELEMETRY</span>
+            <span class="core-status-tag">MK-85 // OK</span>
+          </div>
+
+          <div class="arc-core-display">
+            <!-- Animated Arc Reactor SVG Dial -->
+            <div class="reactor-dial-container">
+              <svg class="reactor-svg" viewBox="0 0 100 100">
+                <circle class="reactor-bg-ring" cx="50" cy="50" r="44" />
+                <circle class="reactor-outer-ring" cx="50" cy="50" r="38" />
+                <circle class="reactor-dash-ring" cx="50" cy="50" r="30" />
+                <circle class="reactor-inner-ring" cx="50" cy="50" r="20" />
+                <circle class="reactor-core-glow" cx="50" cy="50" r="9" />
+              </svg>
+              <div class="reactor-center-val" id="telemetry-rot">0°</div>
+            </div>
+
+            <!-- Dynamic Telemetry Readouts -->
+            <div class="arc-metrics">
+              <div class="arc-stat-row">
+                <span class="arc-label">BEARING:</span>
+                <span class="arc-val highlight" id="suit-bearing-val">000°</span>
+              </div>
+              <div class="arc-stat-row">
+                <span class="arc-label">ELEVATION:</span>
+                <span class="arc-val" id="suit-elev-val">+00°</span>
+              </div>
+              <div class="arc-stat-row">
+                <span class="arc-label">ZOOM MAG:</span>
+                <span class="arc-val highlight-gold" id="suit-zoom-val">1.00x</span>
+              </div>
+              <div class="arc-stat-row">
+                <span class="arc-label">QUANTUM BUS:</span>
+                <span class="arc-val sync-val">4.8 TB/s</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Sci-Fi Audio / Neural Frequency Equalizer Waveform -->
+          <div class="neural-spectrum-container">
+            <div class="spectrum-header">
+              <span>NEURAL FREQUENCY SPECTRUM</span>
+              <span class="freq-khz">48.2 kHz</span>
+            </div>
+            <div class="spectrum-bars" id="spectrum-bars">
+              <div class="spec-bar" style="--h: 65%;"></div>
+              <div class="spec-bar" style="--h: 40%;"></div>
+              <div class="spec-bar" style="--h: 85%;"></div>
+              <div class="spec-bar" style="--h: 30%;"></div>
+              <div class="spec-bar" style="--h: 95%;"></div>
+              <div class="spec-bar" style="--h: 55%;"></div>
+              <div class="spec-bar" style="--h: 70%;"></div>
+              <div class="spec-bar" style="--h: 45%;"></div>
+              <div class="spec-bar" style="--h: 90%;"></div>
+              <div class="spec-bar" style="--h: 60%;"></div>
+              <div class="spec-bar" style="--h: 75%;"></div>
+              <div class="spec-bar" style="--h: 35%;"></div>
+              <div class="spec-bar" style="--h: 80%;"></div>
+              <div class="spec-bar" style="--h: 50%;"></div>
+              <div class="spec-bar" style="--h: 65%;"></div>
+              <div class="spec-bar" style="--h: 40%;"></div>
+            </div>
+          </div>
         </div>
       </aside>
 

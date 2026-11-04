@@ -189,17 +189,6 @@ class HolographicApp {
     if (hintText && isTouch) {
       hintText.textContent = 'TAP or DRAG suit to swap | SWIPE to rotate 360°';
     }
-
-    const operatorBox = document.getElementById('operator-box');
-    const operatorHeader = operatorBox ? operatorBox.querySelector('.box-header') : null;
-    if (operatorHeader) {
-      operatorHeader.style.cursor = 'pointer';
-      operatorHeader.title = 'Click to expand/collapse camera view';
-      operatorHeader.addEventListener('click', (e) => {
-        if (e.target.closest('#btn-switch-cam')) return;
-        operatorBox.classList.toggle('collapsed');
-      });
-    }
   }
 
   _updateCameraUI(res) {
@@ -556,10 +545,12 @@ class HolographicApp {
     const update = () => {
       const d = new Date();
       if (clockEl) {
-        clockEl.textContent = d.toTimeString().split(' ')[0];
+        const timeStr = d.toTimeString().split(' ')[0];
+        const ms = String(d.getMilliseconds()).padStart(3, '0');
+        clockEl.textContent = `${timeStr}.${ms}`;
       }
     };
-    setInterval(update, 1000);
+    setInterval(update, 50);
     update();
   }
 
@@ -579,6 +570,27 @@ class HolographicApp {
 
     // 1. Render 3D Scene
     this.holoScene.render();
+
+    // 1b. Update Right Tactical Arc Reactor Readouts
+    if (this.holoScene) {
+      const rotY = this.holoScene.currentRotationY || 0;
+      const deg = Math.round(((rotY % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2)) * 180 / Math.PI);
+      const rotEl = document.getElementById('telemetry-rot');
+      const bearingEl = document.getElementById('suit-bearing-val');
+      if (rotEl) rotEl.textContent = `${deg}°`;
+      if (bearingEl) bearingEl.textContent = `${String(deg).padStart(3, '0')}°`;
+
+      const elevEl = document.getElementById('suit-elev-val');
+      if (elevEl) {
+        const elevDeg = Math.round((this.holoScene.currentRotationX || 0) * 180 / Math.PI);
+        elevEl.textContent = `${elevDeg >= 0 ? '+' : ''}${elevDeg}°`;
+      }
+
+      const zoomEl = document.getElementById('suit-zoom-val');
+      if (zoomEl) {
+        zoomEl.textContent = `${(this.holoScene.currentZoom || 1.0).toFixed(2)}x`;
+      }
+    }
 
     // 2. Render 2D Overlay Reticles & Sparks
     const centerZone = document.getElementById('pedestal-drop-zone');

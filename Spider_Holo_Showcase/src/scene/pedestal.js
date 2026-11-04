@@ -10,6 +10,8 @@ export class HologramPedestal {
     this._buildFloorPlanes();
     this._buildCylinderBeam();
     this._buildRisingParticles();
+    this._buildVerticalScanner();
+    this._buildDiagnosticOrbitRings();
   }
 
   _buildFloorPlanes() {
@@ -112,6 +114,120 @@ export class HologramPedestal {
     this.group.add(this.particles);
   }
 
+  _buildVerticalScanner() {
+    this.scannerGroup = new THREE.Group();
+
+    // 1. Glowing neon-cyan scan torus ring
+    const ringGeo = new THREE.TorusGeometry(1.22, 0.012, 16, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+    this.scanRingMesh = new THREE.Mesh(ringGeo, ringMat);
+    this.scanRingMesh.rotation.x = Math.PI / 2;
+    this.scannerGroup.add(this.scanRingMesh);
+
+    // 2. Faint laser plane disc inside the ring
+    const discGeo = new THREE.RingGeometry(0.05, 1.22, 48);
+    const discMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.12,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    this.scanDiscMesh = new THREE.Mesh(discGeo, discMat);
+    this.scanDiscMesh.rotation.x = Math.PI / 2;
+    this.scannerGroup.add(this.scanDiscMesh);
+
+    // 3. 4 Cardinal Projector Emitter Beams rising from floor perimeter
+    this.emitters = [];
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI) / 2;
+      const ex = Math.cos(angle) * (this.radius * 0.92);
+      const ez = Math.sin(angle) * (this.radius * 0.92);
+
+      const dotGeo = new THREE.CylinderGeometry(0.035, 0.05, 0.025, 16);
+      const dotMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        blending: THREE.AdditiveBlending
+      });
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      dot.position.set(ex, 0.02, ez);
+      this.group.add(dot);
+
+      // Angled laser beam line from emitter to scanner ring
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending
+      });
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(ex, 0.02, ez),
+        new THREE.Vector3(ex * 0.85, 1.35, ez * 0.85)
+      ]);
+      const beamLine = new THREE.Line(lineGeo, lineMat);
+      this.group.add(beamLine);
+      this.emitters.push({ line: beamLine, basePos: new THREE.Vector3(ex, 0.02, ez) });
+    }
+
+    this.group.add(this.scannerGroup);
+  }
+
+  _buildDiagnosticOrbitRings() {
+    this.orbitGroup = new THREE.Group();
+    this.orbitGroup.position.y = 1.35; // Torso level
+
+    // Ring 1: Primary chest orbit ring
+    const ring1Geo = new THREE.RingGeometry(1.32, 1.34, 64);
+    const ring1Mat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.55,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+    this.orbitRing1 = new THREE.Mesh(ring1Geo, ring1Mat);
+    this.orbitRing1.rotation.x = Math.PI / 2 + 0.18;
+    this.orbitGroup.add(this.orbitRing1);
+
+    // Ring 2: Outer counter-rotating diagnostic ring
+    const ring2Geo = new THREE.RingGeometry(1.48, 1.50, 48);
+    const ring2Mat = new THREE.MeshBasicMaterial({
+      color: 0x00a0ff,
+      transparent: true,
+      opacity: 0.38,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+    this.orbitRing2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    this.orbitRing2.rotation.x = Math.PI / 2 - 0.14;
+    this.orbitGroup.add(this.orbitRing2);
+
+    // Technical coordinate tick markers
+    for (let i = 0; i < 4; i++) {
+      const markerGeo = new THREE.PlaneGeometry(0.10, 0.025);
+      const markerMat = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide
+      });
+      const marker = new THREE.Mesh(markerGeo, markerMat);
+      const angle = (i * Math.PI) / 2;
+      marker.position.set(Math.cos(angle) * 1.33, 0, Math.sin(angle) * 1.33);
+      this.orbitRing1.add(marker);
+    }
+
+    this.group.add(this.orbitGroup);
+  }
+
   triggerShockwave() {
     const geo = new THREE.RingGeometry(0.1, 0.3, 48);
     const mat = new THREE.MeshBasicMaterial({
@@ -181,6 +297,37 @@ export class HologramPedestal {
         }
       }
       this.particles.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Vertical Holographic Laser Scanner animation (sweeping feet to head)
+    if (this.scannerGroup) {
+      const scanY = 1.35 + Math.sin(time * 1.6) * 1.15;
+      this.scannerGroup.position.y = scanY;
+
+      if (this.scanDiscMesh) {
+        this.scanDiscMesh.material.opacity = 0.08 + Math.abs(Math.cos(time * 3.2)) * 0.08;
+      }
+
+      if (this.emitters) {
+        for (const em of this.emitters) {
+          const positions = em.line.geometry.attributes.position.array;
+          positions[3] = em.basePos.x * 0.85;
+          positions[4] = scanY;
+          positions[5] = em.basePos.z * 0.85;
+          em.line.geometry.attributes.position.needsUpdate = true;
+        }
+      }
+    }
+
+    // Diagnostic Orbit Rings Rotation
+    if (this.orbitRing1) {
+      this.orbitRing1.rotation.z += delta * 0.45;
+    }
+    if (this.orbitRing2) {
+      this.orbitRing2.rotation.z -= delta * 0.35;
+    }
+    if (this.orbitGroup) {
+      this.orbitGroup.position.y = 1.35 + Math.sin(time * 1.2) * 0.035;
     }
 
     // Shockwaves animation
